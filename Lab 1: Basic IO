@@ -1,0 +1,213 @@
+https://docs.google.com/document/d/1U9iJ1yTcIZu8gpIJplG8Uzix2rJassg1OHA7_vXbMlQ/edit
+
+Lab 1 Basic IO 
+
+Basic ON and OFF
+This is an example lab submission to give you an idea of the kind of information to include. This example is the bare minimum of what you should include for every lab.
+Try to change some of the valuable to make it flash faster. 
+/*
+Blink
+Turns on an LED on for one second, then off for one second, repeatedly.
+This example code is in the public domain.
+*/
+
+// Pin 13 has an LED connected on most Arduino boards.
+// give it a name:
+int led = 13;
+
+// the setup routine runs once when you press reset:
+void setup() {
+  // initialize the digital pin as an output.
+  pinMode(led, OUTPUT);
+}
+
+// the loop routine runs over and over again forever:
+void loop() {
+  digitalWrite(led, HIGH); // turn the LED on (HIGH is the voltage level)
+  delay(2000); // wait for 2 second
+  digitalWrite(led, LOW); // turn the LED off by making the voltage LOW
+  delay(4000); // wait for 4 second
+}
+
+Set one pin to a special voltage level
+Start with the LED circuit you built for the “Blinking LED” Assignment. For that assignment, we used pin 13 to control the LED and make it blink. Ardiuno has several pins marked PWM which support Pulse Width Modulation. The example code uses Pin 9, so simply move the controlling wire from Pin 13 to Pin 9. 2. Load the example code from the Arduino Sketchbook (File‐>Examples‐>Analog‐>Fading). Load this onto the Arduino and watch the LED Fade.
+
+
+/*
+* Code for cross-fading 3 LEDs, red, green and blue, or one tri-color LED, using PWM
+* The program cross-fades slowly from red to green, green to blue, and blue to red
+* The debugging code assumes Arduino 0004, as it uses the new Serial.begin()-style functions
+*/
+
+// Output
+int redPin   = 9;   // Red LED,   connected to digital pin 9
+int greenPin = 10;  // Green LED, connected to digital pin 10
+int bluePin  = 11;  // Blue LED,  connected to digital pin 11
+
+// Program variables
+int redVal   = 255; // Variables to store the values to send to the pins
+int greenVal = 1;   // Initial values are Red full, Green and Blue off
+int blueVal  = 1;
+
+int i = 0;     // Loop counter    
+int wait = 50; // 50ms (.05 second) delay; shorten for faster fades
+int DEBUG = 0; // DEBUG counter; if set to 1, will write values back via serial
+
+void setup()
+{
+  pinMode(redPin,   OUTPUT);   // sets the pins as output
+  pinMode(greenPin, OUTPUT);   
+  pinMode(bluePin,  OUTPUT); 
+  if (DEBUG) {           // If we want to see the pin values for debugging...
+    Serial.begin(9600);  // ...set up the serial ouput on 0004 style
+  }
+}
+
+// Main program
+void loop()
+{
+  i += 1;      // Increment counter
+  if (i < 255) // First phase of fades
+  {
+    redVal   -= 1; // Red down
+    greenVal += 1; // Green up
+    blueVal   = 1; // Blue low
+  }
+  else if (i < 509) // Second phase of fades
+  {
+    redVal    = 1; // Red low
+    greenVal -= 1; // Green down
+    blueVal  += 1; // Blue up
+  } 
+  else if (i < 763) // Third phase of fades
+  {
+    redVal  += 1; // Red up
+    greenVal = 1; // Green low
+    blueVal -= 1; // Blue down
+  }
+  else // Re-set the counter, and start the fades again
+  {
+    i = 1;
+  }  
+
+  analogWrite(redPin,   redVal);   // Write current values to LED pins
+  analogWrite(greenPin, greenVal); 
+  analogWrite(bluePin,  blueVal);  
+
+  if (DEBUG) { // If we want to read the output
+    DEBUG += 1;     // Increment the DEBUG counter
+    if (DEBUG > 10) // Print every 10 loops
+    {
+      DEBUG = 1;     // Reset the counter
+
+      Serial.print(i);       // Serial commands in 0004 style
+      Serial.print("\t");    // Print a tab
+      Serial.print("R:");    // Indicate that output is red value
+      Serial.print(redVal);  // Print red value
+      Serial.print("\t");    // Print a tab
+      Serial.print("G:");    // Repeat for green and blue...
+      Serial.print(greenVal);
+      Serial.print("\t");    
+      Serial.print("B:");    
+      Serial.println(blueVal); // println, to end with a carriage return
+    }
+  }
+  delay(wait); // Pause for 'wait' milliseconds before resuming the loop
+}
+
+UART Communication
+Up until now, the Arduino board has been operating on autopilot once you’ve uploaded the program. In this step, you will be using Arduino’s Serial Communication feature. Here is the code. Look at the code and make sure you know what each line does.
+
+
+/* 
+ * Serial RGB LED
+ * ---------------
+ * Serial commands control the brightness of R,G,B LEDs 
+ *
+ * Command structure is "<colorCode><colorVal>", where "colorCode" is
+ * one of "r","g",or "b" and "colorVal" is a number 0 to 255.
+ * E.g. "r0"   turns the red LED off.  
+ *      "g127" turns the green LED to half brightness
+ *      "b64"  turns the blue LED to 1/4 brightness
+ *
+ */
+
+char serInString[100];  // array that will hold the different bytes of the string. 100=100characters;
+                        // -> you must state how long the array will be else it won't work properly
+char colorCode;
+int colorVal;
+
+int redPin   = 9;   // Red LED,   connected to digital pin 9
+int greenPin = 10;  // Green LED, connected to digital pin 10
+int bluePin  = 11;  // Blue LED,  connected to digital pin 11
+
+void setup() {
+  pinMode(redPin,   OUTPUT);   // sets the pins as output
+  pinMode(greenPin, OUTPUT);   
+  pinMode(bluePin,  OUTPUT);
+  Serial.begin(9600);
+  analogWrite(redPin,   127);   // set them all to mid brightness
+  analogWrite(greenPin, 127);   // set them all to mid brightness
+  analogWrite(bluePin,  127);   // set them all to mid brightness
+  Serial.println("enter color command (e.g. 'r43') :");  
+}
+
+void loop () {
+  // clear the string
+  memset(serInString, 0, 100);
+  //read the serial port and create a string out of what you read
+  readSerialString(serInString);
+    
+  colorCode = serInString[0];
+  if( colorCode == 'r' || colorCode == 'g' || colorCode == 'b' ) {
+    colorVal = atoi(serInString+1);
+    Serial.print("setting color ");
+    Serial.print(colorCode);
+    Serial.print(" to ");
+    Serial.print(colorVal);
+    Serial.println();
+    serInString[0] = 0;                   // indicates we've used this string
+    if(colorCode == 'r') 
+      analogWrite(redPin, colorVal);
+    else if(colorCode == 'g')
+      analogWrite(greenPin, colorVal);
+    else if(colorCode == 'b')
+      analogWrite(bluePin, colorVal);
+  }
+  
+  delay(100);  // wait a bit, for serial data
+}
+
+//read a string from the serial and store it in an array
+//you must supply the array variable
+void readSerialString (char *strArray) {
+  int i = 0;
+  if(!Serial.available()) {
+    return;
+  }
+  while (Serial.available()) {
+    strArray[i] = Serial.read();
+    i++;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+Homework
+Using all the technique you learn, create a program then can set one led brightness.
+
+
+Using all the technique you learn, create a program then can turn on or off one led by uart communication.
+
+
+Using all the technique you learn, create a program then can set 5 LED brightness and on and off using uart communication.
+
+
+(The bigger the number in front, harder it get)
